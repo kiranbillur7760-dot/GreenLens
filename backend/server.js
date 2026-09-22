@@ -1179,20 +1179,19 @@ app.post("/api/recommend", (req, res) => {
 // SERVER
 // ======================================================
 
-const PORT = 5000;
-
+const PORT = process.env.PORT || 5000;
 
 app.listen(
 
     PORT,
 
-    "127.0.0.1",
+    "0.0.0.0",
 
     () => {
 
         console.log(
 
-            `GreenLens AI backend running on http://127.0.0.1:${PORT}`
+            `GreenLens AI backend running on port ${PORT}`
 
         );
 
