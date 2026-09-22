@@ -1,10 +1,16 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const  { GoogleGenAI }= require ('@google/genai');
+const { GoogleGenAI } = require('@google/genai');
+const authRouter = require("./routes/auth");
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Mount Authentication & OTP Router (Donut Challenge 02)
+app.use("/api/auth", authRouter);
 
 // ======================================================
 // GREENLENS AI
@@ -489,6 +495,23 @@ app.post("/api/hardware-combinations", (req, res) => {
   } catch (err) {
     console.error("Hardware combinations error:", err);
     res.status(500).json({ success: false, message: "Error calculating hardware combinations." });
+  }
+});
+
+app.get("/api/hardware-combinations", (req, res) => {
+  try {
+    const workloadType = req.query.workloadType || "llm";
+    const regionId = req.query.regionId || "us-east-va";
+    const selectedRegion = regionalGrids.find((r) => r.id === regionId) || regionalGrids[0];
+
+    res.json({
+      success: true,
+      workloads: ["llm", "vision", "agentic"],
+      region: selectedRegion,
+      hardwareCount: hardwareProfiles.length
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Error fetching hardware combinations." });
   }
 });
 

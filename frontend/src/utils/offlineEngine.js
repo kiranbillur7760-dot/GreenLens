@@ -305,37 +305,118 @@ export function runOfflineAudit(payload) {
   };
 }
 
-// Queue audit logs to LocalStorage when offline
-export function saveOfflineAudit(payload, result) {
-  const queue = JSON.parse(localStorage.getItem("greenlens_offline_queue") || "[]");
-  queue.push({
-    id: Date.now(),
-    payload,
-    result,
-    timestamp: new Date().toISOString()
+// Enterprise Demo Personas for Donut Challenge 02
+export const ENTERPRISE_PERSONAS = [
+  {
+    email: "lead.architect@enterprise.ai",
+    phone: "+1 415 890 4321",
+    name: "Dr. Elena Vance",
+    role: "ML Infrastructure Architect",
+    department: "Enterprise AI Platform Engineering",
+    permissions: ["audit:write", "cluster:optimize", "csrd:export"]
+  },
+  {
+    email: "sustainability.auditor@esg-council.org",
+    phone: "+44 20 7946 0912",
+    name: "Marcus Sterling",
+    role: "Lead Sustainability Auditor",
+    department: "ESG & Carbon Compliance",
+    permissions: ["audit:read", "csrd:sign", "audit:verify"]
+  },
+  {
+    email: "mlops.engineer@greenlens.cloud",
+    phone: "+91 98765 43210",
+    name: "Aria Chen",
+    role: "Green MLOps Specialist",
+    department: "Cloud Accelerator Operations",
+    permissions: ["audit:write", "cluster:optimize"]
+  }
+];
+
+// Offline OTP Store
+const localOtpStore = new Map();
+
+// Client fallback send OTP (email or phone)
+export function simulateOfflineSendOtp(target) {
+  const isPhone = !target.includes("@");
+  const normalized = isPhone ? target.trim().replace(/[\s()-]/g, "") : target.trim().toLowerCase();
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = Date.now() + 5 * 60 * 1000;
+
+  localOtpStore.set(normalized, {
+    otp,
+    expiresAt,
+    attempts: 0,
+    isPhone
   });
-  localStorage.setItem("greenlens_offline_queue", JSON.stringify(queue));
+
+  return {
+    success: true,
+    target: normalized,
+    type: isPhone ? "phone" : "email",
+    expiresAt,
+    previewOtp: otp,
+    isRealDelivery: false,
+    deliveryProvider: isPhone ? "Mobile SMS Sandbox" : "Email Sandbox",
+    message: isPhone
+      ? `Mobile SMS verification code prepared for ${normalized} (Offline Simulation)`
+      : `Verification code sent to ${normalized} (Offline Simulation)`
+  };
 }
 
-// Sync pending offline logs when internet recovers
-export async function syncOfflineQueue(apiUrl) {
-  const queue = JSON.parse(localStorage.getItem("greenlens_offline_queue") || "[]");
-  if (queue.length === 0) return 0;
+// Client fallback verify OTP (email or phone)
+export function simulateOfflineVerifyOtp(target, otp) {
+  const isPhone = !target.includes("@");
+  const normalized = isPhone ? target.trim().replace(/[\s()-]/g, "") : target.trim().toLowerCase();
+  const stored = localOtpStore.get(normalized);
 
-  try {
-    const response = await fetch(`${apiUrl}/api/sync`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pendingAudits: queue })
-    });
-
-    if (response.ok) {
-      const count = queue.length;
-      localStorage.setItem("greenlens_offline_queue", "[]");
-      return count;
-    }
-  } catch (err) {
-    console.error("Re-sync failed, keeping items queued:", err);
+  if (!stored) {
+    return {
+      success: false,
+      message: "No active verification code found."
+    };
   }
-  return 0;
+
+  if (Date.now() > stored.expiresAt) {
+    localOtpStore.delete(normalized);
+    return {
+      success: false,
+      message: "Verification code has expired. Please request a new OTP."
+    };
+  }
+
+  if (stored.otp !== otp.toString().trim()) {
+    stored.attempts += 1;
+    return {
+      success: false,
+      message: `Invalid verification code. ${Math.max(0, 5 - stored.attempts)} attempts remaining.`
+    };
+  }
+
+  localOtpStore.delete(normalized);
+
+  const persona = ENTERPRISE_PERSONAS.find((p) => (isPhone ? p.phone.replace(/[\s()-]/g, "") === normalized : p.email === normalized)) || {
+    email: isPhone ? `${normalized}@mobile.verified` : normalized,
+    phone: isPhone ? normalized : null,
+    name: isPhone
+      ? `Verified Mobile (${normalized.slice(-4)})`
+      : normalized.split("@")[0].replace(".", " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+    role: "Sustainability Infrastructure Engineer",
+    department: "ML Operations & ESG Intelligence",
+    permissions: ["audit:write", "cluster:optimize", "csrd:export"]
+  };
+
+  const user = {
+    ...persona,
+    authMethod: isPhone ? "Mobile SMS OTP" : "Email OTP",
+    authenticatedAt: new Date().toISOString()
+  };
+
+  const token = `offline_token_${Date.now()}`;
+  return {
+    success: true,
+    token,
+    user,
+    message: "OTP verification successful."
+  };
 }
