@@ -3283,6 +3283,32 @@
   cursor: not-allowed;
 }
 
+/* Secure Inbox Delivery Notice */
+.secure-inbox-notice {
+  background: rgba(46, 229, 157, 0.08);
+  border: 1px solid rgba(46, 229, 157, 0.25);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.secure-inbox-notice .eval-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.secure-inbox-notice .eval-left strong {
+  display: block;
+  color: #ffffff;
+  margin-bottom: 2px;
+}
+
 /* Evaluation Helper Card */
 .evaluation-otp-callout {
   background: rgba(46, 229, 157, 0.1);

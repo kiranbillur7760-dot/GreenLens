@@ -304,7 +304,6 @@ function App() {
   const [authError, setAuthError] = useState("");
   const [authSuccessMsg, setAuthSuccessMsg] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [previewOtpInfo, setPreviewOtpInfo] = useState(null);
   const [authDeliveryInfo, setAuthDeliveryInfo] = useState(null);
 
   // Authenticated user session
@@ -835,7 +834,6 @@ function App() {
         setAuthEmail(target);
       }
       setAuthDeliveryInfo(data);
-      setPreviewOtpInfo(data);
       setAuthSuccessMsg(
         data.isRealDelivery
           ? `Real 6-digit code dispatched to ${target}`
@@ -859,7 +857,6 @@ function App() {
         setAuthEmail(target);
       }
       setAuthDeliveryInfo(simulated);
-      setPreviewOtpInfo(simulated);
       setAuthSuccessMsg(`Verification code dispatched (${simulated.deliveryProvider})`);
       setAuthStep(2);
       setResendCooldown(60);
@@ -2635,57 +2632,46 @@ function App() {
                   <strong>{authMode === "phone" ? `${phoneCountryCode} ${authPhone}` : authEmail}</strong>.
                 </p>
 
-                {/* Real Delivery Channel Status Callout */}
+                {/* Delivery Channel Status Callout */}
                 <div className={`delivery-channel-banner ${authDeliveryInfo?.isRealDelivery ? "real-live" : "sandbox"}`}>
                   <div className="d-channel-left">
                     {authDeliveryInfo?.isRealDelivery ? (
                       <CheckCircle2 className="w-4 h-4 text-mint flex-shrink-0" />
                     ) : (
-                      <Sparkles className="w-4 h-4 text-mint flex-shrink-0" />
+                      <Mail className="w-4 h-4 text-mint flex-shrink-0" />
                     )}
                     <div>
                       <strong>
-                        {authDeliveryInfo?.deliveryProvider || (authMode === "phone" ? "Mobile SMS Gateway" : "Email Transporter")}
+                        {authDeliveryInfo?.deliveryProvider || (authMode === "phone" ? "Mobile SMS Gateway" : "Email Service")}
                       </strong>
                       <span>
-                        {authDeliveryInfo?.isRealDelivery
-                          ? `Live ${authDeliveryInfo?.type === "phone" ? "SMS" : "Email"} delivered to your device`
-                          : "Sandbox simulation active for evaluation"}
+                        {authDeliveryInfo?.message || (authDeliveryInfo?.isRealDelivery
+                          ? `Live ${authDeliveryInfo?.type === "phone" ? "SMS" : "Email"} dispatched to your device`
+                          : `Verification code sent to ${authMode === "phone" ? authPhone : authEmail}`)}
                       </span>
                     </div>
                   </div>
                   {authDeliveryInfo?.isRealDelivery ? (
-                    <span className="live-pill-tag">LIVE REAL DISPATCH</span>
+                    <span className="live-pill-tag">LIVE DISPATCH</span>
                   ) : (
-                    <span className="sandbox-pill-tag">SANDBOX SIMULATOR</span>
+                    <span className="sandbox-pill-tag">DISPATCHED</span>
                   )}
                 </div>
 
-                {/* Evaluation Tester Auto-Fill Card */}
-                {previewOtpInfo?.previewOtp && (
-                  <div className="evaluation-otp-callout">
-                    <div className="eval-left">
-                      <Sparkles className="eval-icon" />
-                      <div>
-                        <strong>Evaluation Tester Code:</strong>
-                        <span>
-                          Delivered OTP is: <code className="eval-code">{previewOtpInfo.previewOtp}</code>
-                        </span>
-                      </div>
+                {/* Secure Inbox Delivery Notice (No OTP shown on screen) */}
+                <div className="secure-inbox-notice">
+                  <div className="eval-left">
+                    <Mail className="w-4 h-4 text-mint flex-shrink-0" />
+                    <div>
+                      <strong>Check Your {authMode === "phone" ? "Messages" : "Email Inbox"}:</strong>
+                      <span>
+                        We sent a 6-digit verification code to{" "}
+                        <strong className="text-mint">{authMode === "phone" ? `${phoneCountryCode} ${authPhone}` : authEmail}</strong>.
+                        Please enter the code received below.
+                      </span>
                     </div>
-                    <button
-                      type="button"
-                      className="btn-autofill-otp"
-                      onClick={() => {
-                        const digits = previewOtpInfo.previewOtp.split("");
-                        setOtpDigits(digits);
-                        setAuthError("");
-                      }}
-                    >
-                      <Copy className="w-3.5 h-3.5" /> Auto-Fill OTP
-                    </button>
                   </div>
-                )}
+                </div>
 
                 {/* 6 Individual Digit Input Boxes with Mobile Touch & WebOTP Auto-Fill Support */}
                 <div className="otp-inputs-grid" onPaste={handleOtpPaste}>
